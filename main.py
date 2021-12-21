@@ -192,7 +192,7 @@ class Modelsheight:
         for country_code in self.countries:
             print(country_code)
             self.get_country_model_links(country_code)
-            self.store_model_links()
+        self.store_model_links()
 
     def remove_url(self, url):
         links = get_json("modelsheight_links.json")
@@ -269,6 +269,7 @@ class Modelsheight:
         data["pics"] = get_photos(soup)
         print(data["insta"])
         append_json({data["insta"]:data}, "data_modelheights.json")
+
         
     def get_all_model_info(self):
         links = get_json("modelsheight_links.json")
@@ -279,11 +280,163 @@ class Modelsheight:
             print(link)
             self.get_model_info(link)
 
+class Babepedia:
+    home_url = "https://babepedia.com"
+    model_links = []
+
+    def get_page_links(self, url):
+        soup = get_soup(url)
+        ol = soup.find("ol", {"class": "top100text"})
+        divs = ol.find_all("a")
+        links = [self.home_url + a["href"] for a in divs]
+        return links
+        
+    def store_model_links(self):
+        write_json(self.model_links, "babepedia_links.json")
+
+    def get_all_model_links(self):
+        base_url = "https://www.babepedia.com/instagramtop100followercounttext?page="
+        page_no = 1
+        for page_no in range(1,492):
+            print(page_no)
+            url = base_url + str(page_no)
+            page_links = self.get_page_links(url)
+            self.model_links.extend(page_links)
+            self.store_model_links()
+    
+    def remove_url(self, url):
+        links = get_json("babepedia_links.json")
+        links.remove(url)
+        write_json(links, "babepedia_links.json")    
+
+    def get_model_info(self, url):
+        soup = get_soup(url)
+
+        data = {
+            "insta": "",
+            "tiktok": "",
+            "twitter": "",
+            "first_name": "",
+            "last_name": "",
+            "post_title": "",
+            "description": "",
+            "nationality":"",
+            "Height": "",
+            "Born": "",
+            "Bust": "",
+            "Hips": "",
+            "Waist": "",
+            "Weight": "",
+            "Hair": "",
+            "Eyes": "",
+            "pics": [],
+            "website": "",
+            "email": "",
+            "phone": "",
+            "refer_url": url,
+            "gender": "woman"
+        }
+        
+        def get_social():
+            div = soup.find("div", {"id": "socialicons"})
+            for a in div.find_all("a"):
+                alt = a.find("img")["alt"]
+                if alt == "Official website":
+                    data["website"] = a["href"]
+                if alt == "Instagram account":
+                    data["insta"] = a["href"].split("/")[-1].replace("@", "")
+                if alt == "Twitter account":
+                    data["twitter"] = a["href"].split("/")[-1].replace("@", "")
+                if alt == "TikTok account":
+                    data["tiktok"] = a["href"].split("/")[-1].replace("@", "")
+
+        def get_stats():
+            ul = soup.find("ul", {"id": "biolist"})
+            for li in ul.find_all("li"):
+                try:
+                    stat = li.find("span", {"class": "label"}).text
+                except AttributeError:
+                    continue
+                if stat == "Born:":
+                    born = " ".join([a.text for a in li.find_all("a")])
+                    data["Born"] = born
+                if stat == "Birthplace":
+                    data["nationality"] = li.find("a").text
+                if stat == "Hair color:":
+                    data["Hair"] = li.find("a").text
+                if stat == "Eye color:":
+                    data["Eyes"] = li.find("a").text
+                if stat == "Height:":
+                    data["Height"] = li.text.split("(")[-1].split(")")[0].replace("or ", "")
+                if stat == "Weight:":
+                    data["Weight"] = li.text.split("(")[-1].split(")")[0].replace("or ", "")
+                if stat == "Measurements:":
+                    measurement = li.text.replace("Measurements:", "").strip().split("-")
+                    data["Bust"] = measurement[0]
+                    data["Waist"] = measurement[1]
+                    data["Hips"] = measurement[2]
+        
+        def get_pics():
+            imgs = []
+            gallery = soup.find("div", {"class": "gallery useruploads"})
+            for a in gallery.find_all("a", {"class": "img"}):
+                imgs.append(self.home_url + a["href"])
+            return imgs
+
+        try:
+            get_social()
+        except AttributeError:
+            return
+
+        if data["insta"] == "":
+            return
+
+        get_stats()
+        name = soup.find("h1", {"id": "babename"}).text
+        data["first_name"] = name.split(" ")[0]
+        data["last_name"] = " ".join(name.split(" ")[1:])
+        data["post_title"] = name 
+        try:
+            data["description"] = soup.find("div", {"class": "babebanner separate"}).find("p").text
+        except:
+            pass
+        try:
+            data["pics"] = get_pics()
+        except:
+            pass
+
+        return data
+
+    def get_all_model_info(self):
+        links = get_json("babepedia_links.json")
+        a = input()
+        done = set([value['refer_url'] for value in get_json("data_babepedia.json").values()])
+        i = 0
+        new_data = {}
+        for link in links[:25000]:
+            if link in done:
+                continue
+            print(link)
+            data = self.get_model_info(link)
+            if data == None:
+                self.remove_url(link)
+                continue
+            new_data[data["insta"]] = data
+            i+=1
+            if i%100 == 0:
+                append_json(new_data, "data_babepedia.json")
+                new_data = {}
+                print(f"writing {i}")
+
 
 if __name__ == "__main__":
     # model = Modelisto()
     # model.get_all_model_info()
 
 
-    model = Modelsheight()
+    # model = Modelsheight()
+    # model.get_model_info("http://www.modelsheight.com/desi-perkins/")
+
+    model = Babepedia()
     model.get_all_model_info()
+    # model.get_model_info("https://www.babepedia.com/babe/Stevie_Reyes")
