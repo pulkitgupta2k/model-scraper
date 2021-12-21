@@ -2,8 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
+from requests.api import head
+
 def get_soup(link):
-    html = requests.get(link).content
+    headers = {'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G960F Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.84 Mobile Safari/537.36',}
+    html = requests.get(link, headers=headers).content
     return BeautifulSoup(html, "html.parser")
 
 def write_json(data, file):
@@ -20,4 +23,4 @@ def append_json(new_data, file):
         data = json.load(f)
     data.update(new_data)
     with open(file, "w") as f:
-        json.dump(data, file)
+        json.dump(data, f)

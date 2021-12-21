@@ -83,7 +83,12 @@ class Modelisto:
                 break
             photos.extend(page_photos)
         return photos
-        
+    
+    def remove_url(self, url):
+        links = get_json("model_links.json")
+        links.remove(url)
+        write_json(links, "model_links.json")
+
     def get_model_info(self, url):
 
         def get_stats(soup):
@@ -107,9 +112,15 @@ class Modelisto:
 
         data = {}
         soup = get_soup(url)
-        person_id = soup.find("div", {"id": "VAPersonLinks"})["data-qs"].split("=")[1]
+        try:
+            person_id = soup.find("div", {"id": "VAPersonLinks"})["data-qs"].split("=")[1]
+        except TypeError:
+            append_json({url:""}, "error.json")
+            print("PersonID not found")
+            return
         social_info = self.get_social_info(person_id)
         if social_info["insta"] == "":
+            self.remove_url(url)
             return
         data.update(social_info)
         data["refer_url"] = url
@@ -118,9 +129,16 @@ class Modelisto:
         data["first_name"] = name[0]
         data["last_name"] = " ".join(name[1:])
         data["post_title"] = " ".join(name)
-        
-        data["website"] = soup.find("img", {"class": "Link"})["alt"]
-        data["description"] = soup.find("section", {"class": "note"}).find("p").text.strip()
+
+        try:
+            data["website"] = soup.find("img", {"class": "Link"})["alt"]
+        except TypeError:
+            data["website"] = ""
+        try:
+            data["description"] = soup.find("section", {"class": "note"}).find("p").text.strip()
+        except AttributeError:
+            data["description"] = ""
+
         data["nationality"] = soup.find("meta", {"name": "geo.country"})["content"]
         
         stats = get_stats(soup)
@@ -130,15 +148,132 @@ class Modelisto:
 
         data["email"] = ""
         data["phone"] = ""
-
         append_json({social_info["insta"]:data}, "data.json")
 
     def get_all_model_info(self):
         links = get_json("model_links.json")
+        done = set([value['refer_url'] for value in get_json("data.json").values()])
+        error = get_json("error.json")
         for link in links:
+            if link in done or link in error.keys():
+                continue
+            print(link)
+            self.get_model_info(link)
+
+class Modelsheight:
+    model_links = []
+    home_url = "http://www.modelsheight.com"
+    countries = ["albanian ","american ","angolan ","argentine ","armenian ","australian ","austrian","belarusian ","belgian ","brazilian ","british ","bulgarian","canadian ","chilean ","chinese ","colombian ","costa rican ","croatian ","cuban ","czech","danish ","denmark ","dominican ","dutch","ethiopian","filipino ","finland ","french","georgian ","german ","greek","hungarian","indian ","indonesian ","iranian ","irish ","israeli ","italian","japanese","kenyan ","korean ","kuwaiti","latvian ","lebanese ","lithuanian ","luxembourger","macedonian ","malaysian ","mexican ","moldovan","nepali ","netherlands ","new zealand ","nicaraguan ","norwegian","palestinian ","paraguay ","peruvian ","philippin ","polish ","portuguese ","puerto rican","romanian ","russian","serbian ","slovakian ","south africa ","south korean ","spanish ","sudan ","swedish ","swiss","taiwanese ","tanzanian ","thailand ","turkish ","ukrainian","venezuelan","welsh"]
+
+    def get_page_links(self, url):
+        soup = get_soup(url)
+        if soup.find("div", {"class": "error-404"}) != None:
+            return []
+        divs = soup.find_all("h2", {"class": "entry-title"})
+        links = [div.find("a")['href'] for div in divs]
+        return links
+    
+    def get_country_model_links(self, country_code):
+        base_url = "http://www.modelsheight.com/category/"
+        page_no = 1
+        while True:
+            url = base_url + country_code + "/page/" + str(page_no)
+            page_links = self.get_page_links(url)
+            if page_links == []:
+                break
+            self.model_links.extend(page_links)
+            page_no += 1
+    
+    def store_model_links(self):
+        write_json(self.model_links, "modelsheight_links.json")
+
+    def get_all_model_links(self):
+        for country_code in self.countries:
+            print(country_code)
+            self.get_country_model_links(country_code)
+        self.store_model_links()
+
+    def get_model_info(self, url):
+        soup = get_soup(url)
+        paras = soup.find_all("p")
+
+        data = {
+            "insta": "",
+            "tiktok": "",
+            "twitter": "",
+            "first_name": "",
+            "last_name": "",
+            "post_title": "",
+            "description": "",
+            "nationality":"",
+            "Height": "",
+            "Born": "",
+            "Bust": "",
+            "Hips": "",
+            "Waist": "",
+            "Weight": "",
+            "Hair": "",
+            "Eyes": "",
+            "pics": [],
+            "website": "",
+            "email": "",
+            "phone": "",
+            "refer_url": url
+        }
+        key_map = {
+            "Instagram": "insta",
+            "TikTok": "tiktok",
+            "Date of Birth": "Born",
+            "Nationality": "nationality",
+            "Twitter": "twitter"
+        }
+
+        def get_stats(para):
+            for line in para:
+                stat = line.split(":")[0]
+                value = line.split(":")[-1].replace("@", "").split(";")[-1].strip()
+                if stat in key_map:
+                    stat = key_map[stat]
+                if stat in data.keys():
+                    data[stat] = value
+
+        def get_description(para):
+            data["description"] = para[1]
+
+        def get_photos(soup):
+            imgs = [img["data-src"] for img in soup.find_all("img", {"class": "lazy-hidden", "border":"0"})]
+            return imgs
+
+        for para in paras:
+            para_list = para.get_text(strip=True, separator='\n').splitlines()
+            for line in para_list:
+                if "Instagram" in line:
+                    get_stats(para_list)
+                if "Profile" in line:
+                    get_description(para_list)
+        if data["insta"] == "":
+            return
+        
+        name = soup.find("h1", {"class": "entry-title"}).text
+        data["first_name"] = name.split(" ")[0]
+        data["last_name"] = " ".join(name.split(" ")[1:])
+        data["post_title"] = name
+
+        data["pics"] = get_photos(soup)
+        
+    def get_all_model_info(self):
+        links = get_json("modelsheight_links.json")
+        done = set([value['refer_url'] for value in get_json("data-modelheights.json").values()])
+        for link in links:
+            if link in done:
+                continue
             print(link)
             self.get_model_info(link)
 
 if __name__ == "__main__":
     model = Modelisto()
     model.get_all_model_info()
+
+
+    # model = Modelsheight()
+    # model.get_model_info("http://www.modelsheight.com/desi-perkins/")
