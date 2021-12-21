@@ -409,7 +409,6 @@ class Babepedia:
 
     def get_all_model_info(self):
         links = get_json("babepedia_links.json")
-        a = input()
         done = set([value['refer_url'] for value in get_json("data_babepedia.json").values()])
         i = 0
         new_data = {}
