@@ -5,9 +5,8 @@ class Modelisto:
     model_links = []
     countries = ["US", "Russia", "Italy", "Albania", "UK", "France", "Cyprus", "Greece", "Australia", "Sweden", "United-Arab-Emirates", "Canada", "Ukraine", "Norway", "Finland", "Romania", "Hungary", "Switzerland",
                  "Germany", "Kenya", "South-Africa", "Egypt", "India", "Nigeria", "Poland", "Mexico", "Spain", "Bulgaria", "Pakistan", "Czech-Republic", "Singapore", "Brazil", "Netherlands", "Turkey", "Iran", "Israel", "IL"]
-
-    
     home_url = "https://modelisto.com"
+
 
     def get_page_links(self, url):
         soup = get_soup(url)
@@ -131,10 +130,15 @@ class Modelisto:
 
         data["email"] = ""
         data["phone"] = ""
-        print(data)
 
+        append_json({social_info["insta"]:data}, "data.json")
 
+    def get_all_model_info(self):
+        links = get_json("model_links.json")
+        for link in links:
+            print(link)
+            self.get_model_info(link)
 
 if __name__ == "__main__":
     model = Modelisto()
-    model.get_model_info("https://modelisto.com/Wiki/Rachel-Marie-Mortenson/")
+    model.get_all_model_info()

@@ -14,3 +14,10 @@ def get_json(file):
     with open(file) as f:
         data = json.load(f)
     return data
+
+def append_json(new_data, file):
+    with open(file) as f:
+        data = json.load(f)
+    data.update(new_data)
+    with open(file, "w") as f:
+        json.dump(data, file)
