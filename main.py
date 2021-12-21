@@ -40,7 +40,7 @@ class Modelisto:
         
         def get_username(soup, title):
             try:
-                username = soup.find("button", {"title": title})["data-actionmethod"].split()[-1]
+                username = soup.find("button", {"title": title})["data-actionmethod"].split()[1]
             except:
                 username = ""
             
