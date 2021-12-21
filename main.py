@@ -371,10 +371,13 @@ class Babepedia:
                 if stat == "Weight:":
                     data["Weight"] = li.text.split("(")[-1].split(")")[0].replace("or ", "")
                 if stat == "Measurements:":
-                    measurement = li.text.replace("Measurements:", "").strip().split("-")
-                    data["Bust"] = measurement[0]
-                    data["Waist"] = measurement[1]
-                    data["Hips"] = measurement[2]
+                    try:
+                        measurement = li.text.replace("Measurements:", "").strip().split("-")
+                        data["Bust"] = measurement[0]
+                        data["Waist"] = measurement[1]
+                        data["Hips"] = measurement[2]
+                    except:
+                        pass
         
         def get_pics():
             imgs = []
@@ -385,7 +388,7 @@ class Babepedia:
 
         try:
             get_social()
-        except AttributeError:
+        except:
             return
 
         if data["insta"] == "":
@@ -422,7 +425,7 @@ class Babepedia:
                 continue
             new_data[data["insta"]] = data
             i+=1
-            if i%100 == 0:
+            if i%20 == 0:
                 append_json(new_data, "data_babepedia.json")
                 new_data = {}
                 print(f"writing {i}")
