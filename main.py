@@ -361,15 +361,30 @@ class Babepedia:
                     born = " ".join([a.text for a in li.find_all("a")])
                     data["Born"] = born
                 if stat == "Birthplace":
-                    data["nationality"] = li.find("a").text
+                    try:
+                        data["nationality"] = li.find("a").text
+                    except:
+                        pass
                 if stat == "Hair color:":
-                    data["Hair"] = li.find("a").text
+                    try:
+                        data["Hair"] = li.find("a").text
+                    except:
+                        pass
                 if stat == "Eye color:":
-                    data["Eyes"] = li.find("a").text
+                    try:
+                        data["Eyes"] = li.find("a").text
+                    except:
+                        pass
                 if stat == "Height:":
-                    data["Height"] = li.text.split("(")[-1].split(")")[0].replace("or ", "")
+                    try:
+                        data["Height"] = li.text.split("(")[-1].split(")")[0].replace("or ", "")
+                    except:
+                        pass
                 if stat == "Weight:":
-                    data["Weight"] = li.text.split("(")[-1].split(")")[0].replace("or ", "")
+                    try:
+                        data["Weight"] = li.text.split("(")[-1].split(")")[0].replace("or ", "")
+                    except:
+                        pass
                 if stat == "Measurements:":
                     try:
                         measurement = li.text.replace("Measurements:", "").strip().split("-")
@@ -393,8 +408,10 @@ class Babepedia:
 
         if data["insta"] == "":
             return
-
-        get_stats()
+        try:
+            get_stats()
+        except:
+            pass
         name = soup.find("h1", {"id": "babename"}).text
         data["first_name"] = name.split(" ")[0]
         data["last_name"] = " ".join(name.split(" ")[1:])
