@@ -163,7 +163,7 @@ class Modelisto:
 class Modelsheight:
     model_links = []
     home_url = "http://www.modelsheight.com"
-    countries = ["albanian ","american ","angolan ","argentine ","armenian ","australian ","austrian","belarusian ","belgian ","brazilian ","british ","bulgarian","canadian ","chilean ","chinese ","colombian ","costa rican ","croatian ","cuban ","czech","danish ","denmark ","dominican ","dutch","ethiopian","filipino ","finland ","french","georgian ","german ","greek","hungarian","indian ","indonesian ","iranian ","irish ","israeli ","italian","japanese","kenyan ","korean ","kuwaiti","latvian ","lebanese ","lithuanian ","luxembourger","macedonian ","malaysian ","mexican ","moldovan","nepali ","netherlands ","new zealand ","nicaraguan ","norwegian","palestinian ","paraguay ","peruvian ","philippin ","polish ","portuguese ","puerto rican","romanian ","russian","serbian ","slovakian ","south africa ","south korean ","spanish ","sudan ","swedish ","swiss","taiwanese ","tanzanian ","thailand ","turkish ","ukrainian","venezuelan","welsh"]
+    countries = ["albanian","american","angolan","argentine","armenian","australian","austrian","belarusian","belgian","brazilian","british","bulgarian","canadian","chilean","chinese","colombian","costa rican","croatian","cuban","czech","danish","denmark","dominican","dutch","ethiopian","filipino","finland","french","georgian","german","greek","hungarian","indian","indonesian","iranian","irish","israeli","italian","japanese","kenyan","korean","kuwaiti","latvian","lebanese","lithuanian","luxembourger","macedonian","malaysian","mexican","moldovan","nepali","netherlands","new zealand","nicaraguan","norwegian","palestinian","paraguay","peruvian","philippin","polish","portuguese","puerto-rican","romanian","russian","serbian","slovakian","south africa","south korean","spanish","sudan","swedish","swiss","taiwanese","tanzanian","thailand","turkish","ukrainian","venezuelan","welsh"]
 
     def get_page_links(self, url):
         soup = get_soup(url)
@@ -178,6 +178,7 @@ class Modelsheight:
         page_no = 1
         while True:
             url = base_url + country_code + "/page/" + str(page_no)
+            print(url)
             page_links = self.get_page_links(url)
             if page_links == []:
                 break
@@ -191,7 +192,12 @@ class Modelsheight:
         for country_code in self.countries:
             print(country_code)
             self.get_country_model_links(country_code)
-        self.store_model_links()
+            self.store_model_links()
+
+    def remove_url(self, url):
+        links = get_json("modelsheight_links.json")
+        links.remove(url)
+        write_json(links, "modelsheight_links.json")
 
     def get_model_info(self, url):
         soup = get_soup(url)
@@ -252,6 +258,7 @@ class Modelsheight:
                 if "Profile" in line:
                     get_description(para_list)
         if data["insta"] == "":
+            self.remove_url(url)
             return
         
         name = soup.find("h1", {"class": "entry-title"}).text
@@ -260,20 +267,23 @@ class Modelsheight:
         data["post_title"] = name
 
         data["pics"] = get_photos(soup)
+        print(data["insta"])
+        append_json({data["insta"]:data}, "data_modelheights.json")
         
     def get_all_model_info(self):
         links = get_json("modelsheight_links.json")
-        done = set([value['refer_url'] for value in get_json("data-modelheights.json").values()])
+        done = set([value['refer_url'] for value in get_json("data_modelheights.json").values()])
         for link in links:
             if link in done:
                 continue
             print(link)
             self.get_model_info(link)
 
+
 if __name__ == "__main__":
-    model = Modelisto()
+    # model = Modelisto()
+    # model.get_all_model_info()
+
+
+    model = Modelsheight()
     model.get_all_model_info()
-
-
-    # model = Modelsheight()
-    # model.get_model_info("http://www.modelsheight.com/desi-perkins/")
