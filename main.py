@@ -1,5 +1,6 @@
+from os import times
 from helper import *
-
+import time
 
 class Modelisto:
     model_links = []
@@ -436,7 +437,11 @@ class Babepedia:
             if link in done:
                 continue
             print(link)
-            data = self.get_model_info(link)
+            try:
+                data = self.get_model_info(link)
+            except:
+                time.sleep(20)
+                data = self.get_model_info(link)
             if data == None:
                 self.remove_url(link)
                 continue
